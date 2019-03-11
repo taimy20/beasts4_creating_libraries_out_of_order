@@ -1,17 +1,5 @@
-// if optionalDependency has a length greater than 0, then callback needs to access the return value of the libraries listed in optionalDependency
-      // librarySystem('dependency', [], function() {
-      //   return 'loaded dependency';
-      // });
-        // in this case, librarySystem('dependency') = 'loaded dependency' because storage['dependency'] = 'loaded dependency'
-
-    // librarySystem('app', ['dependency'], function(dependency) {
-    //   return 'app with ' + dependency;
-    // });
-      // new library called 'app', which will be set equal to the return value of a function that takes dependency as an argument
-      // how do you define dependency?
-      // dependency needs to access the storage object in the closure
-
-    // librarySystem('app'); // 'app with loaded dependency'
+<script src="../simpletest.js"></script>
+<script>
 
 // librarySystem('workBlurb', ['name', 'company'], function(name, company) {
 //   return name + ' works at ' + company;
@@ -27,7 +15,6 @@
 
 // librarySystem('workBlurb'); // 'Gordon works at Watch and Code'
 
-// newLibrarySystem
 (function() {
   var storage = {}; // storage stores the {libraryName: return value of the callback} 
   var dependencyMap = {}; // {'name':'workBlurb', 'company':'workBlurb'};
@@ -92,3 +79,70 @@
 
   window.newLibrarySystem = newLibrarySystem;
 })();
+
+// tests
+tests({
+  '1. it should run the library inputs in order': function() {
+    debugger;
+    window.libraryStorage = {};
+
+    newLibrarySystem('name', [], function(){
+      return 'taimur';
+    });
+    newLibrarySystem('company', [], function() {
+      return 'SAP'
+    });
+    newLibrarySystem('workBlurb', ['name','company'], function(name, company){
+      return name + ' works at ' + company;
+    });
+    var result = newLibrarySystem('workBlurb');
+
+    eq(result, 'taimur works at SAP');
+  },
+
+  '2. it should run the library inputs out of order': function() {
+
+    window.libraryStorage = {};
+
+    newLibrarySystem('playBlurb', ['type','frequency'], function(type, frequency){
+      return type + ' happens ' + frequency;
+    });
+    newLibrarySystem('type', [], function(){
+      return 'solid';
+    });
+    newLibrarySystem('frequency', [], function() {
+      return 'often'
+    });
+
+    var result = newLibrarySystem('pooBlurb');
+
+    eq(result, 'solid happens often');
+  },
+
+  '3. it should only run the callback once': function() {
+    window.libraryStorage = {};
+
+    var getCalls = 0;
+
+    newLibrarySystem('name', [], function(){
+      getCalls++
+      return 'taimur';
+    });
+    
+    newLibrarySystem('workBlurb', ['name','company'], function(name, company){
+      getCalls++;
+      return name + ' works at ' + company;
+    });
+
+    newLibrarySystem('name');
+    newLibrarySystem('name');
+    newLibrarySystem('name');
+    newLibrarySystem('workBlurb');
+    newLibrarySystem('workBlurb');
+    newLibrarySystem('workBlurb');
+
+    eq(getCalls, 2);    
+  }
+});
+
+</script>
