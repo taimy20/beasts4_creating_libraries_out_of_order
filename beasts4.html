@@ -1,0 +1,94 @@
+// if optionalDependency has a length greater than 0, then callback needs to access the return value of the libraries listed in optionalDependency
+      // librarySystem('dependency', [], function() {
+      //   return 'loaded dependency';
+      // });
+        // in this case, librarySystem('dependency') = 'loaded dependency' because storage['dependency'] = 'loaded dependency'
+
+    // librarySystem('app', ['dependency'], function(dependency) {
+    //   return 'app with ' + dependency;
+    // });
+      // new library called 'app', which will be set equal to the return value of a function that takes dependency as an argument
+      // how do you define dependency?
+      // dependency needs to access the storage object in the closure
+
+    // librarySystem('app'); // 'app with loaded dependency'
+
+// librarySystem('workBlurb', ['name', 'company'], function(name, company) {
+//   return name + ' works at ' + company;
+// });
+
+// librarySystem('name', [], function() {
+//   return 'Gordon';
+// });
+
+// librarySystem('company', [], function() {
+//   return 'Watch and Code';
+// });
+
+// librarySystem('workBlurb'); // 'Gordon works at Watch and Code'
+
+// newLibrarySystem
+(function() {
+  var storage = {}; // storage stores the {libraryName: return value of the callback} 
+  var dependencyMap = {}; // {'name':'workBlurb', 'company':'workBlurb'};
+  var libraryMap = {}; // {'workblurb': [name, company]}
+  var functionLibrary = {}; //object to store the callback function (not just its return value)
+
+  // create function that creates the iNeedThis array and runs the callback given the iNeedThis array
+  function getTheShitFromStorage(libraryMap, libraryName, storage, functionLibrary){
+    var iNeedThis = libraryMap[libraryName].map(function(dependency){
+      return storage[dependency];
+    });
+    storage[libraryName] = functionLibrary[libraryName].apply(this,iNeedThis);
+    return storage[libraryName]; 
+  }; 
+  // create function that builds the librarySytem
+  function newLibrarySystem (libraryName, optionalDependency, callback) {
+    if (arguments.length > 2) {
+      if (optionalDependency.length > 0) {
+        // add dependency:libraryName to dependencyMap 
+        optionalDependency.forEach(function(e) {
+          dependencyMap[e] = libraryName;
+        });
+        // add libraryName:[dependency1, dependency2, etc.] to libraryMap
+        libraryMap[libraryName] = optionalDependency;
+        // add the callback function to the functionLibrary to be called when the dependencies are there
+        functionLibrary[libraryName] = callback;
+        // check dependencyMap to see if the library you're adding is a dependency of any existing library
+        for (key in dependencyMap) {
+          if (libraryName === key) {
+            // if it is, then add it to the storage object
+            storage[libraryName] = callback();
+          }
+        }
+        return getTheShitFromStorage(libraryMap, libraryName, storage, functionLibrary);
+      }
+      else {
+        storage[libraryName] = callback();
+      }
+    }
+    else {
+      // check if the libraryName has dependencies
+      if (libraryMap[libraryName]) {
+        // check if those dependencies are in the storage object
+        var counter = 0;
+        for (key in storage) {
+          if (libraryMap[libraryName].find(function(e){
+            return e === key
+          }))
+            counter++
+        }
+      } else {
+        return storage[libraryName];
+      }
+      if (counter === libraryMap[libraryName].length) {
+        // find the return values, from the storage object, that correspond with the libraryName's dependencies
+        return getTheShitFromStorage(libraryMap, libraryName, storage, functionLibrary);
+      } else {
+        console.log('you are missing something');
+      }
+    };
+  };
+
+  window.newLibrarySystem = newLibrarySystem;
+})();
